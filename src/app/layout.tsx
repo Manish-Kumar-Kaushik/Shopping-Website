@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import LayoutClient from "@/components/layout-client";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -27,11 +28,8 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body
-        suppressHydrationWarning
-        className="min-h-full flex flex-col bg-slate-50 text-slate-900"
-      >
-        {children}
+      <body suppressHydrationWarning className="h-screen w-screen overflow-hidden bg-slate-50 text-slate-900">
+        <LayoutClient>{children}</LayoutClient>
       </body>
     </html>
   );

@@ -1,14 +1,12 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic";
+
+const AdminOverview = dynamic(
+  () => import("@/components/dashboard/admin-overview"),
+  { ssr: false }
+);
 
 export default function Home() {
-  const router = useRouter()
-
-  useEffect(() => {
-    router.push("/dashboard")
-  }, [router])
-
-  return null
+  return <AdminOverview />;
 }

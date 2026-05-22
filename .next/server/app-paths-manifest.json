@@ -1,0 +1,8 @@
+{
+  "/dashboard/ai-queue/page": "app/dashboard/ai-queue/page.js",
+  "/dashboard/products/action/view/page": "app/dashboard/products/action/view/page.js",
+  "/page": "app/page.js",
+  "/dashboard/products/page": "app/dashboard/products/page.js",
+  "/dashboard/products/action/mapping/page": "app/dashboard/products/action/mapping/page.js",
+  "/dashboard/connectors/page": "app/dashboard/connectors/page.js"
+}
