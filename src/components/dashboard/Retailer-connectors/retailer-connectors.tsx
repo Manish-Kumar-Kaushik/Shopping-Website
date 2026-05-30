@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import {
   Activity,
   AlertTriangle,
@@ -297,7 +298,7 @@ export default function RetailerConnectors() {
                           <TableCell className="whitespace-nowrap px-4 py-4 text-[12px] text-slate-700">{row.lastError}</TableCell>
                           <TableCell className="whitespace-nowrap px-4 py-4">
                             <div className="flex items-center gap-3">
-                              <button className="text-[12px] font-bold text-blue-600 hover:text-blue-700">View Detail</button>
+                              <Link href="/dashboard/connectors/amazon" className="text-[12px] font-bold text-blue-600 hover:text-blue-700">View Detail</Link>
                               <button className="text-slate-700 hover:text-slate-950"><MoreVertical className="h-4 w-4" /></button>
                             </div>
                           </TableCell>

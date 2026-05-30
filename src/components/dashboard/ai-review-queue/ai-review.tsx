@@ -11,8 +11,6 @@ import {
   ClipboardList,
   Clock,
   Eye,
-  FileText,
-  HelpCircle,
   MoreVertical,
   Plus,
   RefreshCw,
@@ -21,6 +19,14 @@ import {
   SlidersHorizontal,
   UserCheck,
 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface ProductItem {
   id: string;
@@ -90,7 +96,7 @@ const initialProducts: ProductItem[] = [
     image: "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=100&q=80",
     asin: "B07FDJMC91",
     sku: "NINJA-AF101",
-    category: "Home & Kitchen > Small Appliances",
+    category: "Home & Kitchen",
     verdict: "Buy",
     score: 82,
     confidence: "Medium",
@@ -144,26 +150,6 @@ const initialProducts: ProductItem[] = [
     },
     timeInQueue: "6h 5m",
   },
-  {
-    id: "6",
-    name: "Keurig K-Elite Coffee Maker",
-    image: "https://images.unsplash.com/photo-1570968915860-54d5c301fc9f?w=100&q=80",
-    asin: "B07JYZC12M",
-    sku: "KEURIG-KELITE",
-    category: "Home & Kitchen > Coffee Makers",
-    verdict: "Wait",
-    score: 71,
-    confidence: "Low",
-    queueType: "Re-Review",
-    priority: "Low",
-    reason: "Not enough reviews",
-    assignedTo: {
-      name: "John Smith",
-      initials: "JS",
-      avatarColor: "bg-blue-600",
-    },
-    timeInQueue: "8h 20m",
-  },
 ];
 
 export default function AIReviewQueue() {
@@ -187,82 +173,83 @@ export default function AIReviewQueue() {
     }
   };
 
-  const getVerdictStyle = (verdict: ProductItem["verdict"]) => {
+  const renderBadge = (text: string, type: "green" | "orange" | "red" | "blue" | "indigo") => {
+    const colors = {
+      green: "bg-green-100 text-green-700 ring-green-700/10",
+      orange: "bg-orange-100 text-orange-700 ring-orange-700/10",
+      red: "bg-red-100 text-red-700 ring-red-700/10",
+      blue: "bg-blue-100 text-blue-700 ring-blue-700/10",
+      indigo: "bg-indigo-100 text-indigo-700 ring-indigo-700/10",
+    };
+    return (
+      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${colors[type]}`}>
+        {text}
+      </span>
+    );
+  };
+
+  const getVerdictBadge = (verdict: ProductItem["verdict"]) => {
     switch (verdict) {
-      case "Buy":
-        return "bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-md text-xs font-semibold";
-      case "Wait":
-        return "bg-orange-50 text-orange-700 border border-orange-200 px-2.5 py-0.5 rounded-md text-xs font-semibold";
-      case "Avoid":
-        return "bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-md text-xs font-semibold";
-      case "Better Alternative":
-        return "bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 rounded-md text-xs font-semibold";
+      case "Buy": return renderBadge(verdict, "green");
+      case "Wait": return renderBadge(verdict, "orange");
+      case "Avoid": return renderBadge(verdict, "red");
+      case "Better Alternative": return renderBadge(verdict, "blue");
     }
   };
 
-  const getConfidenceStyle = (confidence: ProductItem["confidence"]) => {
+  const getConfidenceBadge = (confidence: ProductItem["confidence"]) => {
     switch (confidence) {
-      case "High":
-        return "bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-md text-xs font-semibold";
-      case "Medium":
-        return "bg-orange-50 text-orange-700 border border-orange-200 px-2.5 py-0.5 rounded-md text-xs font-semibold";
-      case "Low":
-        return "bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-md text-xs font-semibold";
+      case "High": return renderBadge(confidence, "green");
+      case "Medium": return renderBadge(confidence, "orange");
+      case "Low": return renderBadge(confidence, "red");
     }
   };
 
-  const getQueueTypeStyle = (type: ProductItem["queueType"]) => {
+  const getQueueTypeBadge = (type: ProductItem["queueType"]) => {
     switch (type) {
-      case "AI Verdict":
-        return "bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-md text-xs font-semibold";
-      case "Human Approval":
-        return "bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 rounded-md text-xs font-semibold";
-      case "Re-Review":
-        return "bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-md text-xs font-semibold";
-      case "Escalated":
-        return "bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-md text-xs font-semibold";
+      case "AI Verdict": return renderBadge(type, "indigo");
+      case "Human Approval": return renderBadge(type, "blue");
+      case "Re-Review": return renderBadge(type, "red");
+      case "Escalated": return renderBadge(type, "orange");
     }
   };
 
-  const getPriorityStyle = (priority: ProductItem["priority"]) => {
+  const getPriorityBadge = (priority: ProductItem["priority"]) => {
     switch (priority) {
-      case "High":
-        return "bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-md text-xs font-semibold";
-      case "Medium":
-        return "bg-orange-50 text-orange-700 border border-orange-200 px-2.5 py-0.5 rounded-md text-xs font-semibold";
-      case "Low":
-        return "bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-md text-xs font-semibold";
+      case "High": return renderBadge(priority, "red");
+      case "Medium": return renderBadge(priority, "orange");
+      case "Low": return renderBadge(priority, "green");
     }
   };
 
   const getScoreCircleStyle = (score: number) => {
-    if (score >= 80) return "border-emerald-200 text-emerald-600";
+    if (score >= 80) return "border-green-200 text-green-600";
     if (score >= 70) return "border-orange-200 text-orange-600";
     if (score >= 50) return "border-blue-200 text-blue-600";
-    return "border-rose-200 text-rose-600";
+    return "border-red-200 text-red-600";
   };
 
   return (
-    <div className="flex min-h-full flex-col bg-slate-50">
+    <div className="flex min-h-full flex-col bg-slate-50 font-sans">
       <main className="flex flex-col gap-6 p-6">
-        {/* TOP HEADER SECTION */}
+        {/* Header */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="mb-2 text-xs text-slate-500 font-semibold tracking-wide flex items-center gap-1.5">
+            <div className="mb-2 text-sm text-slate-500 font-medium flex items-center gap-1.5">
               <span>AI Review Queue</span>
-              <span className="text-slate-300">/</span>
-              <span>Queue List</span>
+              <span className="text-slate-300">&gt;</span>
+              <span className="text-slate-700">Queue List</span>
             </div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-950">AI Review Queue</h1>
-              <span className="bg-indigo-100 text-indigo-700 rounded-md px-2 py-0.5 text-xs font-bold shrink-0">128</span>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">AI Review Queue</h1>
+              <span className="bg-indigo-100 text-indigo-700 rounded-md px-2 py-0.5 text-xs font-bold ring-1 ring-inset ring-indigo-700/10">128</span>
             </div>
             <p className="mt-1 text-sm text-slate-500">
               Review and approve AI verdicts, scores, and summaries before they go live.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 transition-colors">
+            <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors">
               <Settings className="h-4 w-4 text-slate-500" /> Queue Settings
             </button>
             <button className="inline-flex h-10 items-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors">
@@ -271,202 +258,171 @@ export default function AIReviewQueue() {
           </div>
         </div>
 
-        {/* TOP METRICS ROW */}
+        {/* Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {/* Card 1 */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex items-start gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 ring-1 ring-indigo-100">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 ring-1 ring-inset ring-indigo-100">
               <ClipboardList className="h-5 w-5 text-indigo-600" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-slate-500">Total in Queue</p>
-              <div className="mt-1.5 text-2xl font-extrabold leading-none text-slate-950">128</div>
-              <p className="mt-2 text-[11px] font-bold text-emerald-600">↑ 18 from yesterday</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total in Queue</p>
+              <div className="mt-1 text-2xl font-bold text-slate-900">128</div>
+              <p className="mt-1 text-xs font-medium text-green-600">↑ 18 from yesterday</p>
             </div>
           </div>
 
           {/* Card 2 */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex items-start gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-50 ring-1 ring-orange-100">
-              <Bot className="h-5 w-5 text-orange-500" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-50 ring-1 ring-inset ring-orange-100">
+              <Bot className="h-5 w-5 text-orange-600" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-slate-500">Pending AI Verdict</p>
-              <div className="mt-1.5 text-2xl font-extrabold leading-none text-slate-950">54</div>
-              <p className="mt-2 text-[11px] font-bold text-orange-500">42.2% of queue</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Pending AI Verdict</p>
+              <div className="mt-1 text-2xl font-bold text-slate-900">54</div>
+              <p className="mt-1 text-xs font-medium text-orange-600">42.2% of queue</p>
             </div>
           </div>
 
           {/* Card 3 */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex items-start gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 ring-1 ring-blue-100">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 ring-1 ring-inset ring-blue-100">
               <UserCheck className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-slate-500">Pending Human Approval</p>
-              <div className="mt-1.5 text-2xl font-extrabold leading-none text-slate-950">47</div>
-              <p className="mt-2 text-[11px] font-bold text-blue-600">36.7% of queue</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Pending Human Approval</p>
+              <div className="mt-1 text-2xl font-bold text-slate-900">47</div>
+              <p className="mt-1 text-xs font-medium text-blue-600">36.7% of queue</p>
             </div>
           </div>
 
           {/* Card 4 */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex items-start gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-rose-50 ring-1 ring-rose-100">
-              <AlertTriangle className="h-5 w-5 text-rose-600" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 ring-1 ring-inset ring-red-100">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-slate-500">Re-Review Needed</p>
-              <div className="mt-1.5 text-2xl font-extrabold leading-none text-slate-950">19</div>
-              <p className="mt-2 text-[11px] font-bold text-rose-600">14.8% of queue</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Re-Review Needed</p>
+              <div className="mt-1 text-2xl font-bold text-slate-900">19</div>
+              <p className="mt-1 text-xs font-medium text-red-600">14.8% of queue</p>
             </div>
           </div>
 
           {/* Card 5 */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex items-start gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 ring-1 ring-emerald-100">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-50 ring-1 ring-inset ring-green-100">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-slate-500">Approved Today</p>
-              <div className="mt-1.5 text-2xl font-extrabold leading-none text-slate-950">86</div>
-              <p className="mt-2 text-[11px] font-bold text-emerald-600">↑ 12.4% vs yesterday</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Approved Today</p>
+              <div className="mt-1 text-2xl font-bold text-slate-900">86</div>
+              <p className="mt-1 text-xs font-medium text-green-600">↑ 12.4% vs yesterday</p>
             </div>
           </div>
 
           {/* Card 6 */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex items-start gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 ring-1 ring-indigo-100">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 ring-1 ring-inset ring-indigo-100">
               <Clock className="h-5 w-5 text-indigo-600" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-slate-500">Avg. Queue Time</p>
-              <div className="mt-1.5 text-2xl font-extrabold leading-none text-slate-950">4h 32m</div>
-              <p className="mt-2 text-[11px] font-bold text-emerald-600">↓ 18m vs yesterday</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Avg. Queue Time</p>
+              <div className="mt-1 text-2xl font-bold text-slate-900">4h 32m</div>
+              <p className="mt-1 text-xs font-medium text-green-600">↓ 18m vs yesterday</p>
             </div>
           </div>
         </div>
 
-        {/* MAIN CONTENT CONTAINER */}
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
+        {/* Main Content Container */}
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col relative">
           
-          {/* A. Filters Row */}
+          {/* Filters Row */}
           <div className="p-4 border-b border-slate-200 flex flex-wrap gap-4 items-end">
-            {/* Search */}
             <div className="flex-1 min-w-[280px] flex flex-col gap-1.5">
-              <label htmlFor="search-input" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Search</label>
+              <label htmlFor="search-input" className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Search</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
                   id="search-input"
                   type="text"
                   placeholder="Search by product name, brand, ASIN, SKU..."
-                  className="w-full h-10 rounded-lg border border-slate-200 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                  className="w-full h-9 rounded-md border border-slate-200 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
             </div>
 
-            {/* Queue Type */}
             <div className="w-[140px] flex flex-col gap-1.5">
-              <label htmlFor="queue-type-select" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Queue Type</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Queue Type</label>
               <div className="relative">
-                <select
-                  id="queue-type-select"
-                  className="w-full h-10 appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-600"
-                >
+                <select className="w-full h-9 appearance-none rounded-md border border-slate-200 bg-white pl-3 pr-8 text-sm font-medium text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
                   <option>All</option>
                   <option>AI Verdict</option>
                   <option>Human Approval</option>
-                  <option>Re-Review</option>
-                  <option>Escalated</option>
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
               </div>
             </div>
 
-            {/* AI Verdict */}
             <div className="w-[140px] flex flex-col gap-1.5">
-              <label htmlFor="ai-verdict-select" className="text-xs font-bold text-slate-500 uppercase tracking-wider">AI Verdict</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">AI Verdict</label>
               <div className="relative">
-                <select
-                  id="ai-verdict-select"
-                  className="w-full h-10 appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-600"
-                >
+                <select className="w-full h-9 appearance-none rounded-md border border-slate-200 bg-white pl-3 pr-8 text-sm font-medium text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
                   <option>All</option>
                   <option>Buy</option>
                   <option>Wait</option>
                   <option>Avoid</option>
-                  <option>Better Alternative</option>
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
               </div>
             </div>
 
-            {/* AI Buy Score */}
             <div className="w-[140px] flex flex-col gap-1.5">
-              <label htmlFor="ai-buy-score-select" className="text-xs font-bold text-slate-500 uppercase tracking-wider">AI Buy Score</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">AI Buy Score</label>
               <div className="relative">
-                <select
-                  id="ai-buy-score-select"
-                  className="w-full h-10 appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-600"
-                >
+                <select className="w-full h-9 appearance-none rounded-md border border-slate-200 bg-white pl-3 pr-8 text-sm font-medium text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
                   <option>All</option>
                   <option>80+</option>
                   <option>70-79</option>
-                  <option>50-69</option>
-                  <option>&lt; 50</option>
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
               </div>
             </div>
 
-            {/* Priority */}
             <div className="w-[140px] flex flex-col gap-1.5">
-              <label htmlFor="priority-select" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Priority</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Priority</label>
               <div className="relative">
-                <select
-                  id="priority-select"
-                  className="w-full h-10 appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-600"
-                >
+                <select className="w-full h-9 appearance-none rounded-md border border-slate-200 bg-white pl-3 pr-8 text-sm font-medium text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
                   <option>All</option>
                   <option>High</option>
                   <option>Medium</option>
                   <option>Low</option>
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
               </div>
             </div>
 
-            {/* Assigned To */}
             <div className="w-[140px] flex flex-col gap-1.5">
-              <label htmlFor="assigned-to-select" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Assigned To</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Assigned To</label>
               <div className="relative">
-                <select
-                  id="assigned-to-select"
-                  className="w-full h-10 appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-600"
-                >
+                <select className="w-full h-9 appearance-none rounded-md border border-slate-200 bg-white pl-3 pr-8 text-sm font-medium text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
                   <option>All</option>
                   <option>John Smith</option>
-                  <option>Emma Davis</option>
-                  <option>Mike Wilson</option>
-                  <option>Lisa Patel</option>
-                  <option>Tom Clark</option>
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
               </div>
             </div>
 
-            {/* Add Filter */}
             <div className="flex flex-col gap-1.5 shrink-0">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider leading-none">More Filters</span>
-              <button className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-colors">
-                <Plus className="h-4 w-4 text-slate-500" /> Add Filter
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider opacity-0">Action</span>
+              <button className="flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition-colors">
+                <Plus className="h-4 w-4 text-slate-500" /> Filter
               </button>
             </div>
           </div>
 
-          {/* B. Tabs Row */}
+          {/* Tabs Row */}
           <div className="px-4 pt-4 border-b border-slate-200 flex gap-6 overflow-x-auto whitespace-nowrap scrollbar-none">
             {[
               { id: "all", name: "All Items", count: 128 },
@@ -480,9 +436,9 @@ export default function AIReviewQueue() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`pb-3 text-sm font-semibold transition-colors border-b-2 relative ${
+                  className={`pb-3 text-sm font-medium transition-colors border-b-2 relative ${
                     active
-                      ? "text-indigo-600 border-indigo-600 font-bold"
+                      ? "text-indigo-600 border-indigo-600 font-semibold"
                       : "text-slate-500 border-transparent hover:text-slate-800"
                   }`}
                 >
@@ -492,95 +448,87 @@ export default function AIReviewQueue() {
             })}
           </div>
 
-          {/* C. Table Controls Row */}
-          <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200">
-            <span className="text-sm font-semibold text-slate-500">
-              Showing 1 to 20 of 128 results
+          {/* Table Controls */}
+          <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 bg-white">
+            <span className="text-sm font-medium text-slate-500">
+              Showing 1 to 5 of 128 results
             </span>
             <div className="flex flex-wrap items-center gap-3">
-              <button className="flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-colors">
+              <button className="flex h-8 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition-colors">
                 <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" /> Columns <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
               </button>
               
               <div className="relative">
-                <select
-                  aria-label="Rows per page"
-                  className="appearance-none h-9 rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-600"
-                >
+                <select className="appearance-none h-8 rounded-md border border-slate-200 bg-white pl-3 pr-8 text-xs font-medium text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
                   <option>20 per page</option>
                   <option>50 per page</option>
                   <option>100 per page</option>
                 </select>
-                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
               </div>
 
               {/* Pagination */}
-              <div className="flex items-center border border-slate-200 rounded-lg bg-white overflow-hidden shadow-sm">
-                <button className="flex h-9 w-9 items-center justify-center border-r border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors" aria-label="Previous page">
+              <div className="flex items-center border border-slate-200 rounded-md bg-white overflow-hidden shadow-sm h-8">
+                <button className="flex h-8 w-8 items-center justify-center border-r border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors">
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                <button className="flex h-9 w-9 items-center justify-center bg-indigo-600 text-sm font-bold text-white">1</button>
-                <button className="flex h-9 w-9 items-center justify-center border-l border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">2</button>
-                <button className="flex h-9 w-9 items-center justify-center border-l border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">3</button>
-                <span className="flex h-9 w-8 items-center justify-center border-l border-slate-200 text-xs font-semibold text-slate-400 bg-slate-50/50">...</span>
-                <button className="flex h-9 w-9 items-center justify-center border-l border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">7</button>
-                <button className="flex h-9 w-9 items-center justify-center border-l border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors" aria-label="Next page">
+                <button className="flex h-8 w-8 items-center justify-center bg-indigo-600 text-xs font-semibold text-white">1</button>
+                <button className="flex h-8 w-8 items-center justify-center border-l border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors">2</button>
+                <button className="flex h-8 w-8 items-center justify-center border-l border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors">3</button>
+                <span className="flex h-8 w-8 items-center justify-center border-l border-slate-200 text-xs font-medium text-slate-400 bg-slate-50/50">...</span>
+                <button className="flex h-8 w-8 items-center justify-center border-l border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors">7</button>
+                <button className="flex h-8 w-8 items-center justify-center border-l border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors">
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
             </div>
           </div>
 
-          {/* D. DATA TABLE */}
+          {/* Data Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 w-12 text-center">
+            <Table className="w-full whitespace-nowrap">
+              <TableHeader className="bg-slate-50">
+                <TableRow className="border-b border-slate-200 hover:bg-slate-50">
+                  <TableHead className="w-12 text-center py-3">
                     <input
                       type="checkbox"
-                      aria-label="Select all rows"
                       className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                       checked={selectedIds.length === initialProducts.length}
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
-                  </th>
-                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Product</th>
-                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Category</th>
-                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">AI Verdict</th>
-                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 text-center">AI Buy Score</th>
-                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Confidence</th>
-                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Queue Type</th>
-                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Priority</th>
-                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Reason</th>
-                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Assigned To</th>
-                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">In Queue For</th>
-                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">Product</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">Category</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">AI Verdict</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500 text-center">AI Buy Score</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">Confidence</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">Queue Type</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">Priority</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">Reason</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">Assigned To</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">In Queue For</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500 text-center">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {initialProducts.map((row) => {
                   const isChecked = selectedIds.includes(row.id);
                   return (
-                    <tr
+                    <TableRow
                       key={row.id}
                       className={`border-b border-slate-100 hover:bg-slate-50/50 transition-colors ${
-                        isChecked ? "bg-indigo-50/10" : ""
+                        isChecked ? "bg-indigo-50/50" : ""
                       }`}
                     >
-                      {/* Checkbox */}
-                      <td className="px-4 py-4 text-center">
+                      <TableCell className="text-center py-3">
                         <input
                           type="checkbox"
-                          aria-label={`Select ${row.name}`}
                           className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                           checked={isChecked}
                           onChange={(e) => handleSelectRow(row.id, e.target.checked)}
                         />
-                      </td>
-
-                      {/* Product details */}
-                      <td className="px-4 py-4 min-w-[240px]">
+                      </TableCell>
+                      <TableCell className="py-3 min-w-[240px]">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-md border border-slate-200 overflow-hidden bg-white shrink-0 flex items-center justify-center shadow-sm">
                             <img
@@ -590,87 +538,67 @@ export default function AIReviewQueue() {
                             />
                           </div>
                           <div className="min-w-0">
-                            <h4 className="text-[13px] font-bold text-slate-900 leading-snug truncate">{row.name}</h4>
-                            <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                              ASIN: {row.asin} &bull; SKU: {row.sku}
+                            <h4 className="text-sm font-semibold text-slate-900 leading-snug truncate">{row.name}</h4>
+                            <p className="text-[11px] text-slate-500 mt-0.5 leading-snug font-medium">
+                              ASIN: {row.asin} <span className="mx-1">&bull;</span> SKU: {row.sku}
                             </p>
                           </div>
                         </div>
-                      </td>
-
-                      {/* Category */}
-                      <td className="px-4 py-4 text-[13px] font-semibold text-slate-700 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell className="py-3 text-sm font-medium text-slate-700">
                         {row.category}
-                      </td>
-
-                      {/* AI Verdict */}
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={getVerdictStyle(row.verdict)}>{row.verdict}</span>
-                      </td>
-
-                      {/* AI Buy Score */}
-                      <td className="px-4 py-4 text-center whitespace-nowrap">
+                      </TableCell>
+                      <TableCell className="py-3">
+                        {getVerdictBadge(row.verdict)}
+                      </TableCell>
+                      <TableCell className="py-3 text-center">
                         <div className="flex justify-center">
-                          <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center font-bold text-xs ${getScoreCircleStyle(row.score)}`}>
+                          <div className={`w-8 h-8 rounded-full border-[1.5px] flex items-center justify-center font-bold text-xs bg-white shadow-sm ${getScoreCircleStyle(row.score)}`}>
                             {row.score}
                           </div>
                         </div>
-                      </td>
-
-                      {/* Confidence */}
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={getConfidenceStyle(row.confidence)}>{row.confidence}</span>
-                      </td>
-
-                      {/* Queue Type */}
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={getQueueTypeStyle(row.queueType)}>{row.queueType}</span>
-                      </td>
-
-                      {/* Priority */}
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={getPriorityStyle(row.priority)}>{row.priority}</span>
-                      </td>
-
-                      {/* Reason */}
-                      <td className="px-4 py-4 text-[13px] font-semibold text-slate-600 max-w-[220px] truncate">
+                      </TableCell>
+                      <TableCell className="py-3">
+                        {getConfidenceBadge(row.confidence)}
+                      </TableCell>
+                      <TableCell className="py-3">
+                        {getQueueTypeBadge(row.queueType)}
+                      </TableCell>
+                      <TableCell className="py-3">
+                        {getPriorityBadge(row.priority)}
+                      </TableCell>
+                      <TableCell className="py-3 text-sm font-medium text-slate-600 max-w-[200px] truncate">
                         {row.reason}
-                      </td>
-
-                      {/* Assigned To */}
-                      <td className="px-4 py-4 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell className="py-3">
                         <div className="flex items-center gap-2">
                           <div className={`w-6 h-6 rounded-full text-[10px] font-bold text-white flex items-center justify-center shadow-sm shrink-0 ${row.assignedTo.avatarColor}`}>
                             {row.assignedTo.initials}
                           </div>
-                          <span className="text-[13px] font-semibold text-slate-700">{row.assignedTo.name}</span>
+                          <span className="text-sm font-medium text-slate-700">{row.assignedTo.name}</span>
                         </div>
-                      </td>
-
-                      {/* In Queue For */}
-                      <td className="px-4 py-4 text-[13px] font-semibold text-slate-600 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell className="py-3 text-sm font-medium text-slate-600">
                         {row.timeInQueue}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-4 py-4 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-2">
-                          <button className="text-slate-400 hover:text-slate-700 p-1 rounded hover:bg-slate-100 transition-colors" aria-label="View Details">
+                      </TableCell>
+                      <TableCell className="py-3 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <button className="text-slate-400 hover:text-indigo-600 p-1.5 rounded hover:bg-indigo-50 transition-colors">
                             <Eye className="h-4 w-4" />
                           </button>
-                          <button className="text-slate-450 hover:text-slate-800 p-1 rounded hover:bg-slate-100 transition-colors" aria-label="More Options">
+                          <button className="text-slate-400 hover:text-slate-800 p-1.5 rounded hover:bg-slate-100 transition-colors">
                             <MoreVertical className="h-4 w-4" />
                           </button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
 
-          {/* E. Bottom Footer Bar */}
+          {/* Footer Bar */}
           <div className="bg-slate-50 border-t border-slate-200 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
               <input
@@ -680,16 +608,16 @@ export default function AIReviewQueue() {
                 checked={selectedIds.length === initialProducts.length}
                 onChange={(e) => handleSelectAll(e.target.checked)}
               />
-              <label htmlFor="select-all-bottom" className="text-sm font-semibold text-slate-700 select-none">
+              <label htmlFor="select-all-bottom" className="text-sm font-medium text-slate-700 select-none">
                 Select all items on this page
               </label>
             </div>
 
-            <span className="text-sm font-semibold text-slate-500">
+            <span className="text-sm font-medium text-slate-500 hidden sm:block">
               128 items in queue
             </span>
 
-            <button className="inline-flex h-10 items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors self-end sm:self-auto">
+            <button className="inline-flex h-9 items-center gap-2 rounded-md bg-indigo-600 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 transition-colors self-end sm:self-auto">
               Batch Actions <ChevronDown className="h-4 w-4" />
             </button>
           </div>

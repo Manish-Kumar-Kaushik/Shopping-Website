@@ -3,42 +3,43 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ChevronRight,
   ArrowLeft,
   Download,
   ExternalLink,
   HelpCircle,
   ChevronDown,
+  ChevronRight,
   Plus,
-  BarChart2,
   Tag,
   Star,
-  Users,
-  TrendingDown,
-  Shield,
-  AlertCircle,
-  Check,
   PlayCircle,
-  BarChart,
   Info,
+  Save,
+  Trash2,
+  MessageSquare,
+  TrendingDown,
+  User,
+  ArrowRight,
 } from "lucide-react";
-
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 // ─────────────────────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────────────────────
-
-interface ScoreComponent {
+interface ScoreComp {
   label: string;
   score: number | null;
-  color: string;
+  scoreColor: string;
   barColor: string;
-  trackColor: string;
   weight: number;
-  weightLabel: string;
 }
 
-interface EvidenceRow {
+interface EvidRow {
   icon: React.ReactNode;
   source: string;
   items: number | string;
@@ -49,7 +50,6 @@ interface EvidenceRow {
 interface HistoryRow {
   version: string;
   score: number;
-  change: string;
   changeDelta: number | null;
   reason: string;
   model: string;
@@ -58,958 +58,676 @@ interface HistoryRow {
 }
 
 // ─────────────────────────────────────────────────────────────
-// STATIC DATA
+// DATA
 // ─────────────────────────────────────────────────────────────
-
-const SCORE_COMPONENTS: ScoreComponent[] = [
-  {
-    label: "Value Score",
-    score: 74,
-    color: "text-amber-600",
-    barColor: "bg-amber-400",
-    trackColor: "bg-amber-100",
-    weight: 25,
-    weightLabel: "Weight 25%",
-  },
-  {
-    label: "Quality Score",
-    score: 88,
-    color: "text-emerald-600",
-    barColor: "bg-emerald-500",
-    trackColor: "bg-emerald-100",
-    weight: 25,
-    weightLabel: "Weight 25%",
-  },
-  {
-    label: "Review Trust Score",
-    score: 81,
-    color: "text-blue-600",
-    barColor: "bg-blue-500",
-    trackColor: "bg-blue-100",
-    weight: 20,
-    weightLabel: "Weight 20%",
-  },
-  {
-    label: "Price Score",
-    score: 62,
-    color: "text-orange-500",
-    barColor: "bg-orange-400",
-    trackColor: "bg-orange-100",
-    weight: 20,
-    weightLabel: "Weight 20%",
-  },
-  {
-    label: "Health / Safety Score",
-    score: null,
-    color: "text-slate-400",
-    barColor: "bg-slate-200",
-    trackColor: "bg-slate-100",
-    weight: 0,
-    weightLabel: "Weight 0%",
-  },
-  {
-    label: "Expert / YouTube Evidence Score",
-    score: 70,
-    color: "text-violet-600",
-    barColor: "bg-violet-500",
-    trackColor: "bg-violet-100",
-    weight: 10,
-    weightLabel: "Weight 10%",
-  },
+const SCORE_COMPONENTS: ScoreComp[] = [
+  { label: "Value Score", score: 74, scoreColor: "#0066FF", barColor: "#0066FF", weight: 25 },
+  { label: "Quality Score", score: 88, scoreColor: "#16A34A", barColor: "#16A34A", weight: 25 },
+  { label: "Review Trust Score", score: 81, scoreColor: "#0066FF", barColor: "#0066FF", weight: 20 },
+  { label: "Price Score", score: 62, scoreColor: "#EA580C", barColor: "#EA580C", weight: 20 },
+  { label: "Health / Safety Score", score: null, scoreColor: "#94A3B8", barColor: "#E2E8F0", weight: 0 },
+  { label: "Expert / YouTube Evidence Score", score: 70, scoreColor: "#8B5CF6", barColor: "#8B5CF6", weight: 10 },
 ];
 
 const WEIGHT_ROWS = [
-  { label: "Value Score", pct: 25, barColor: "bg-amber-400" },
-  { label: "Quality Score", pct: 25, barColor: "bg-emerald-500" },
-  { label: "Review Trust Score", pct: 20, barColor: "bg-blue-500" },
-  { label: "Price Score", pct: 20, barColor: "bg-orange-400" },
-  { label: "Expert / YouTube Evidence", pct: 10, barColor: "bg-violet-500" },
+  { label: "Value Score", pct: 25 },
+  { label: "Quality Score", pct: 25 },
+  { label: "Review Trust Score", pct: 20 },
+  { label: "Price Score", pct: 20 },
+  { label: "Expert / YouTube Evidence", pct: 10 },
 ];
 
-const EVIDENCE_ROWS: EvidenceRow[] = [
-  {
-    icon: <Tag className="w-3.5 h-3.5 text-blue-500" />,
-    source: "Retailer Prices",
-    items: 12,
-    status: "Fresh",
-    lastUpdated: "May 18, 2024, 8:45 AM",
-  },
-  {
-    icon: <Star className="w-3.5 h-3.5 text-amber-500" />,
-    source: "Review Clusters",
-    items: "1,842",
-    status: "Fresh",
-    lastUpdated: "May 18, 2024, 8:12 AM",
-  },
-  {
-    icon: <PlayCircle className="w-3.5 h-3.5 text-red-500" />,
-    source: "YouTube Reviews",
-    items: 38,
-    status: "Fresh",
-    lastUpdated: "May 18, 2024, 6:10 AM",
-  },
-  {
-    icon: <Users className="w-3.5 h-3.5 text-violet-500" />,
-    source: "Expert Reviews",
-    items: 14,
-    status: "Stale",
-    lastUpdated: "May 17, 2024, 11:20 PM",
-  },
-  {
-    icon: <BarChart className="w-3.5 h-3.5 text-teal-500" />,
-    source: "Price History (90d)",
-    items: 90,
-    status: "Fresh",
-    lastUpdated: "May 18, 2024, 8:40 AM",
-  },
-  {
-    icon: <Shield className="w-3.5 h-3.5 text-slate-400" />,
-    source: "User Reports",
-    items: 6,
-    status: "OK",
-    lastUpdated: "May 18, 2024, 6:15 AM",
-  },
+const EVIDENCE_ROWS: EvidRow[] = [
+  { icon: <Tag className="w-4 h-4 text-slate-500" />, source: "Retailer Prices", items: 12, status: "Fresh", lastUpdated: "May 18, 2024, 8:45 AM" },
+  { icon: <MessageSquare className="w-4 h-4 text-slate-500" />, source: "Review Clusters", items: "1,842", status: "Fresh", lastUpdated: "May 18, 2024, 7:32 AM" },
+  { icon: <PlayCircle className="w-4 h-4 text-slate-500" />, source: "YouTube Reviews", items: 38, status: "Fresh", lastUpdated: "May 18, 2024, 6:10 AM" },
+  { icon: <Star className="w-4 h-4 text-slate-500" />, source: "Expert Reviews", items: 14, status: "Stale", lastUpdated: "May 17, 2024, 11:20 PM" },
+  { icon: <TrendingDown className="w-4 h-4 text-slate-500" />, source: "Price History (90d)", items: 90, status: "Fresh", lastUpdated: "May 18, 2024, 8:40 AM" },
+  { icon: <User className="w-4 h-4 text-slate-500" />, source: "User Reports", items: 6, status: "OK", lastUpdated: "May 18, 2024, 5:15 AM" },
 ];
 
 const HISTORY_ROWS: HistoryRow[] = [
-  {
-    version: "electronics-v1.2",
-    score: 76,
-    change: "-6",
-    changeDelta: -6,
-    reason: "Price increased above 90-day average",
-    model: "v1.2",
-    updatedBy: "Scoring Engine",
-    updatedAt: "May 18, 2024, 9:23 AM",
-  },
-  {
-    version: "electronics-v1.1",
-    score: 82,
-    change: "-4",
-    changeDelta: -4,
-    reason: "Lower Review Trust Score",
-    model: "v1.1",
-    updatedBy: "Scoring Engine",
-    updatedAt: "May 16, 2024, 8:12 AM",
-  },
-  {
-    version: "electronics-v1.0",
-    score: 86,
-    change: "—",
-    changeDelta: null,
-    reason: "Initial score",
-    model: "v1.0",
-    updatedBy: "Scoring Engine",
-    updatedAt: "May 10, 2024, 10:05 AM",
-  },
+  { version: "electronics-v1.2", score: 76, changeDelta: -6, reason: "Price increased above 90-day average", model: "v1.2", updatedBy: "Scoring Engine", updatedAt: "May 18, 2024, 9:23 AM" },
+  { version: "electronics-v1.1", score: 82, changeDelta: -4, reason: "Lower Review Trust Score", model: "v1.1", updatedBy: "Scoring Engine", updatedAt: "May 16, 2024, 8:12 AM" },
+  { version: "electronics-v1.0", score: 86, changeDelta: null, reason: "Initial score", model: "v1.0", updatedBy: "Scoring Engine", updatedAt: "May 10, 2024, 10:05 AM" },
+];
+
+const SCORE_DATA = [
+  { date: "Apr 19", score: 86 },
+  { date: "Apr 24", score: 78 },
+  { date: "Apr 29", score: 84 },
+  { date: "May 4", score: 75 },
+  { date: "May 9", score: 83 },
+  { date: "May 14", score: 79 },
+  { date: "May 18", score: 76 },
 ];
 
 // ─────────────────────────────────────────────────────────────
-// HELPER: Status Badge
+// COMPONENT HELPERS
 // ─────────────────────────────────────────────────────────────
+function StatusBadge({ status }: { status: "Fresh" | "Stale" | "OK" | "Wait" | "High" }) {
+  if (status === "Wait" || status === "Stale") {
+    return <Badge variant="outline" className="bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-200 text-xs font-semibold px-2.5 py-0.5">{status}</Badge>;
+  }
+  if (status === "Fresh" || status === "High") {
+    return <Badge variant="outline" className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200 text-xs font-semibold px-2.5 py-0.5">{status}</Badge>;
+  }
+  return <Badge variant="outline" className="bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200 text-xs font-semibold px-2.5 py-0.5">{status}</Badge>;
+}
 
-function StatusBadge({ status }: { status: "Fresh" | "Stale" | "OK" }) {
-  const styles = {
-    Fresh: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-    Stale: "bg-amber-50 text-amber-700 border border-amber-200",
-    OK: "bg-slate-100 text-slate-600 border border-slate-200",
-  };
+function BarIcon({ className }: { className?: string }) {
   return (
-    <span
-      className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-wide ${styles[status]}`}
-    >
-      {status}
-    </span>
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="6" y1="20" x2="6" y2="14" />
+      <line x1="12" y1="20" x2="12" y2="9" />
+      <line x1="18" y1="20" x2="18" y2="4" />
+    </svg>
   );
 }
 
 // ─────────────────────────────────────────────────────────────
-// HELPER: Radial Score Ring (SVG)
+// RADIAL SCORE (3/4 GAUGE ARC)
 // ─────────────────────────────────────────────────────────────
-
 function RadialScore({ score }: { score: number }) {
-  const r = 52;
-  const cx = 68;
-  const cy = 68;
+  const [mounted, setMounted] = React.useState(false);
+  
+  React.useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const r = 58;
+  const size = 160;
+  const c = size / 2;
   const circ = 2 * Math.PI * r;
-  const filled = (score / 100) * circ;
-  const gap = 0;
+  const arcLength = circ * (240 / 360);
+  const scoreArcLength = mounted ? arcLength * (score / 100) : 0;
 
   return (
-    <svg width="136" height="136" viewBox="0 0 136 136">
-      <defs>
-        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#3b82f6" />
-          <stop offset="60%" stopColor="#06b6d4" />
-          <stop offset="100%" stopColor="#10b981" />
-        </linearGradient>
-      </defs>
-      {/* Track */}
-      <circle
-        cx={cx}
-        cy={cy}
-        r={r}
-        fill="none"
-        stroke="#e2e8f0"
-        strokeWidth="11"
-      />
-      {/* Progress */}
-      <circle
-        cx={cx}
-        cy={cy}
-        r={r}
-        fill="none"
-        stroke="url(#ringGrad)"
-        strokeWidth="11"
-        strokeLinecap="round"
-        strokeDasharray={`${filled - gap} ${circ - filled + gap}`}
-        transform="rotate(-90 68 68)"
-      />
-      {/* Score number */}
-      <text
-        x={cx}
-        y={cy - 5}
-        textAnchor="middle"
-        fontSize="30"
-        fontWeight="800"
-        fill="#1e293b"
-        fontFamily="Inter, sans-serif"
-      >
-        {score}
-      </text>
-      {/* /100 */}
-      <text
-        x={cx}
-        y={cy + 16}
-        textAnchor="middle"
-        fontSize="13"
-        fill="#94a3b8"
-        fontFamily="Inter, sans-serif"
-      >
-        /100
-      </text>
-    </svg>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// HELPER: Area Sparkline (SVG)
-// ─────────────────────────────────────────────────────────────
-
-function ScoreSparkline() {
-  const data = [86, 85, 84, 83, 82, 82, 80, 79, 78, 77, 76, 76];
-  const W = 220;
-  const H = 90;
-  const padX = 8;
-  const padY = 10;
-  const minVal = 70;
-  const maxVal = 92;
-
-  const toX = (i: number) => padX + (i / (data.length - 1)) * (W - padX * 2);
-  const toY = (v: number) =>
-    H - padY - ((v - minVal) / (maxVal - minVal)) * (H - padY * 2);
-
-  const pts = data.map((v, i) => `${toX(i)},${toY(v)}`).join(" ");
-  const areaBase = toY(minVal);
-  const area = `${toX(0)},${areaBase} ${pts} ${toX(data.length - 1)},${areaBase}`;
-
-  return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
-      <defs>
-        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.01" />
-        </linearGradient>
-      </defs>
-      {/* Y-axis labels */}
-      {[100, 75, 50, 25].map((v) => (
-        <text
-          key={v}
-          x={0}
-          y={toY(v) + 4}
-          fontSize="9"
-          fill="#94a3b8"
-          fontFamily="Inter, sans-serif"
-        >
-          {v}
-        </text>
-      ))}
-      {/* Area fill */}
-      <polygon points={area} fill="url(#areaGrad)" />
-      {/* Line */}
-      <polyline
-        points={pts}
-        fill="none"
-        stroke="#3b82f6"
-        strokeWidth="2"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-      {/* Last dot */}
-      <circle
-        cx={toX(data.length - 1)}
-        cy={toY(data[data.length - 1])}
-        r="4"
-        fill="#3b82f6"
-        stroke="white"
-        strokeWidth="2"
-      />
-    </svg>
+    <div className="relative mx-auto" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {/* Background Arc */}
+        <circle
+          cx={c}
+          cy={c}
+          r={r}
+          fill="none"
+          stroke="#E2E8F0"
+          strokeWidth="12"
+          strokeLinecap="round"
+          strokeDasharray={`${arcLength} ${circ}`}
+          transform={`rotate(150 ${c} ${c})`}
+        />
+        {/* Foreground Arc */}
+        <circle
+          cx={c}
+          cy={c}
+          r={r}
+          fill="none"
+          stroke="#0066FF"
+          strokeWidth="12"
+          strokeLinecap="round"
+          strokeDasharray={`${scoreArcLength} ${circ}`}
+          transform={`rotate(150 ${c} ${c})`}
+          style={{ transition: "stroke-dasharray 1.5s cubic-bezier(0.4, 0, 0.2, 1)" }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-[42px] font-black text-slate-800 leading-none">{score}</span>
+        <span className="text-[12px] text-slate-400 font-semibold mt-1">/100</span>
+      </div>
+    </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────
-
 export default function ScoreBreakdownDetail() {
   const router = useRouter();
-  const [overrideEnabled, setOverrideEnabled] = useState(false);
+  const [mounted, setMounted] = React.useState(false);
+  
+  React.useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+  const [overrideOn, setOverrideOn] = useState(false);
   const [newScore, setNewScore] = useState("");
   const [reason, setReason] = useState("");
-  const [adminNote, setAdminNote] = useState("");
 
   return (
-    <div className="flex h-full bg-[#f8fafc] min-h-0">
-      {/* ════════════════════════════════════════════
-          SCROLLABLE MAIN AREA
-      ════════════════════════════════════════════ */}
-      <div className="flex-1 overflow-y-auto min-w-0">
-        <div className="px-6 py-5 max-w-[1100px]">
-
-          {/* ── Breadcrumb + Actions ── */}
-          <div className="flex items-center justify-between mb-1">
-            <nav className="flex items-center gap-1 text-[12px]">
-              <button
-                onClick={() => router.push("/dashboard/audit")}
-                className="text-blue-600 hover:underline font-medium"
-              >
-                Home
-              </button>
-              <ChevronRight className="w-3 h-3 text-slate-400" />
-              <button
-                onClick={() => router.push("/dashboard/audit")}
-                className="text-blue-600 hover:underline font-medium"
-              >
-                Score Audit
-              </button>
-              <ChevronRight className="w-3 h-3 text-slate-400" />
-              <span className="text-slate-500">Sony WH-1000XM5</span>
-            </nav>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => router.push("/dashboard/audit")}
-                className="flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm transition-all"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Back to Score Audit
-              </button>
-              <button className="flex items-center gap-1.5 h-8 px-3 text-[12px] font-semibold bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm transition-all">
-                <Download className="w-3.5 h-3.5" />
-                Export
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </button>
-            </div>
-          </div>
-
-          {/* ── Page Title ── */}
-          <div className="mb-4">
-            <h1 className="text-[22px] font-bold text-slate-800 leading-tight">
-              Score Breakdown Detail
-            </h1>
-            <p className="text-[13px] text-slate-500 mt-0.5">
-              Review score components, evidence, version history, and manual
-              overrides.
+    <div className="flex-1 bg-slate-50 p-6 flex flex-col gap-6 min-w-[1100px] overflow-x-auto" style={{ fontFamily: "Inter, sans-serif" }}>
+      {/* ══ HEADER ══ */}
+      <div>
+        {/* breadcrumb */}
+        <nav className="flex items-center text-xs text-slate-500 mb-2">
+          <span className="font-medium hover:text-slate-700 cursor-pointer">Admin</span>
+          <span className="mx-2 text-slate-300">/</span>
+          <span onClick={() => router.push("/dashboard/audit")} className="font-medium text-blue-600 hover:underline cursor-pointer">Score Audit</span>
+          <span className="mx-2 text-slate-300">/</span>
+          <span className="font-medium text-slate-700">Sony WH-1000XM5</span>
+        </nav>
+        {/* title row */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 leading-tight tracking-tight">Score Breakdown Detail</h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Review score components, evidence, version history, and manual overrides.
             </p>
           </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => router.push("/dashboard/audit")}
+              className="text-sm font-medium"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back to Score Audit
+            </Button>
+            <Button variant="outline" className="text-sm font-medium">
+              <Download className="w-4 h-4 mr-2" /> Export <ChevronDown className="w-4 h-4 ml-2 text-slate-400" />
+            </Button>
+          </div>
+        </div>
+      </div>
 
-          {/* ── Product Hero Card ── */}
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 mb-4">
-            <div className="flex items-center gap-4 flex-wrap">
-              {/* Product Image */}
-              <div className="w-[72px] h-[72px] rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 text-4xl">
-                🎧
+      {/* ══ HERO PRODUCT CARD ══ */}
+      <Card className="flex items-center p-6 bg-white border border-slate-200 rounded-xl shadow-sm">
+        {/* thumb + info */}
+        <div className="flex items-center gap-5 pr-8 shrink-0">
+          <div className="w-28 h-28 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center p-2 shrink-0">
+            <img src="/images/sony_headphones.png" alt="Sony WH-1000XM5" className="w-24 h-24 object-contain shrink-0" />
+          </div>
+          <div className="flex flex-col justify-center">
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="text-lg font-bold text-slate-900">Sony WH-1000XM5 Wireless Headphones</h2>
+              <a href="https://www.amazon.com/dp/B09X57JWHH" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+            
+            <div className="flex gap-10">
+              <div>
+                <span className="block text-xs uppercase tracking-wider text-slate-500 font-bold mb-1">Category</span>
+                <span className="text-sm font-semibold text-slate-700">Electronics &gt; Headphones</span>
               </div>
-
-              {/* Product Info */}
-              <div className="flex-1 min-w-[200px]">
-                <div className="flex items-start gap-1.5">
-                  <h2 className="text-[15px] font-bold text-slate-800 leading-snug">
-                    Sony WH-1000XM5 Wireless Headphones
-                  </h2>
-                  <ExternalLink className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0 cursor-pointer" />
-                </div>
-                <p className="text-[12px] text-slate-500 mt-0.5">
-                  Electronics &gt; Headphones
-                </p>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <span className="text-[11px] text-slate-400 font-medium">
-                    ASIN
-                  </span>
-                  <span className="text-[11px] font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
-                    B09X57JWHH
-                  </span>
-                </div>
-              </div>
-
-              {/* KPI strip */}
-              <div className="flex items-center gap-0 divide-x divide-slate-100 ml-auto">
-                {/* AI Verdict */}
-                <div className="px-4 text-center">
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold mb-1.5">
-                    AI Verdict
-                  </p>
-                  <span className="inline-block px-3 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200 text-[12px] font-bold">
-                    Wait
-                  </span>
-                </div>
-
-                {/* Overall Score */}
-                <div className="px-4 text-center">
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold mb-0.5">
-                    Overall AI Buy Score
-                  </p>
-                  <div className="flex items-baseline gap-1 justify-center">
-                    <span className="text-[32px] font-extrabold text-slate-800 leading-none">
-                      76
-                    </span>
-                    <span className="text-[14px] text-slate-400 font-medium">
-                      /100
-                    </span>
-                  </div>
-                </div>
-
-                {/* Confidence */}
-                <div className="px-4 text-center">
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold mb-1.5">
-                    Confidence
-                  </p>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[12px] font-semibold">
-                    <BarChart2 className="w-3 h-3" />
-                    High
-                  </span>
-                </div>
-
-                {/* Version + Updated */}
-                <div className="px-4 space-y-1.5">
-                  <div>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold mb-0.5">
-                      Score Version
-                    </p>
-                    <span className="inline-block px-2 py-0.5 rounded-md bg-blue-50 border border-blue-100 text-blue-700 text-[11px] font-mono font-semibold">
-                      electronics-v1.2
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold mb-0.5">
-                      Last Updated
-                    </p>
-                    <p className="text-[12px] text-slate-700 font-semibold">
-                      May 18, 2024, 9:23 AM
-                    </p>
-                    <p className="text-[10px] text-slate-400">
-                      by Scoring Engine
-                    </p>
-                  </div>
-                </div>
+              <div>
+                <span className="block text-xs uppercase tracking-wider text-slate-500 font-bold mb-1">ASIN</span>
+                <span className="text-sm font-mono font-bold text-slate-700">B09X57JWHH</span>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* ── Score Overview Row ── */}
-          <div className="grid grid-cols-12 gap-4 mb-4">
+        {/* stats strip */}
+        <div className="flex items-center justify-between flex-1 pl-8 border-l border-slate-200">
+          {/* AI Verdict */}
+          <div className="flex flex-col justify-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">AI Verdict</span>
+            <StatusBadge status="Wait" />
+          </div>
+          <div className="w-px h-14 bg-slate-200 mx-2" />
+          {/* Score */}
+          <div className="flex flex-col justify-center gap-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Overall AI Buy Score</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl font-black text-blue-600 leading-none">76</span>
+              <span className="text-sm text-slate-400 font-medium">/100</span>
+            </div>
+          </div>
+          <div className="w-px h-14 bg-slate-200 mx-2" />
+          {/* Confidence */}
+          <div className="flex flex-col justify-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Confidence</span>
+            <StatusBadge status="High" />
+          </div>
+          <div className="w-px h-14 bg-slate-200 mx-2" />
+          {/* Version */}
+          <div className="flex flex-col justify-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Score Version</span>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-mono text-xs px-2.5 py-0.5">
+              electronics-v1.2
+            </Badge>
+          </div>
+          <div className="w-px h-14 bg-slate-200 mx-2" />
+          {/* Last Updated */}
+          <div className="flex flex-col justify-center gap-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Last Updated</span>
+            <span className="text-sm font-semibold text-slate-800">May 18, 2024, 9:23 AM</span>
+            <span className="text-xs text-slate-400">by Scoring Engine</span>
+          </div>
+        </div>
+      </Card>
 
-            {/* LEFT: Overall Radial + Meta */}
-            <div className="col-span-12 lg:col-span-3 bg-white border border-slate-200 rounded-xl shadow-sm p-4 flex flex-col items-center">
-              <div className="self-start mb-3">
-                <span className="text-[13px] font-bold text-slate-800">
-                  Overall AI Buy Score
-                </span>
+      {/* ══ MAIN BODY (DASHBOARD GRID) ══ */}
+      <div className="grid grid-cols-12 gap-6 items-start">
+        {/* LEFT COLUMN (MAIN AREA) */}
+        <div className="col-span-8 flex flex-col gap-6">
+          {/* Row 1: Overall Score + Score Components */}
+          <div className="grid grid-cols-12 gap-6">
+            {/* Overall AI Buy Score */}
+            <Card className="col-span-4 p-5 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm">
+              <h3 className="text-sm font-bold text-slate-900 mb-5">Overall AI Buy Score</h3>
+
+              <div className="flex justify-center mb-4">
+                <RadialScore score={76} />
               </div>
 
-              <RadialScore score={76} />
-
-              <div className="mt-2 mb-4">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-semibold">
-                  <BarChart2 className="w-3 h-3" />
-                  High Confidence
-                </span>
+              <div className="flex justify-center mb-6">
+                <StatusBadge status="High" />
               </div>
 
-              {/* Meta KVs */}
-              <div className="w-full border-t border-slate-100 pt-3 space-y-2">
+              <div className="border-t border-slate-100 pt-4 space-y-3 flex-1">
                 {[
-                  { k: "Model", v: "electronics-v1.2", mono: true },
-                  { k: "Calculated", v: "May 18, 2024, 9:23 AM", mono: false },
-                  { k: "Category", v: "Electronics", mono: false },
-                  { k: "Data Freshness", v: "Up to date", green: true },
-                ].map(({ k, v, mono, green }) => (
-                  <div key={k} className="flex justify-between items-start gap-2">
-                    <span className="text-[11px] text-slate-500 shrink-0">{k}</span>
+                  { icon: Tag, k: "Model", v: "electronics-v1.2", mono: true },
+                  { icon: Clock, k: "Calculated", v: "May 18, 2024, 9:23 AM" },
+                  { icon: FileText, k: "Category", v: "Electronics" },
+                  { icon: CheckCircle2, k: "Data Freshness", v: "Up to date", green: true },
+                ].map(({ icon: Icon, k, v, mono, green }) => (
+                  <div key={k} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Icon className="w-3.5 h-3.5 text-slate-400" />
+                      <span className="text-xs text-slate-500 font-medium">{k}</span>
+                    </div>
                     <span
-                      className={`text-[11px] text-right leading-snug ${
+                      className={cn(
+                        "text-xs",
                         mono
-                          ? "font-mono text-slate-700"
+                          ? "font-mono text-slate-700 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded"
                           : green
-                          ? "text-emerald-600 font-semibold"
-                          : "text-slate-700 font-medium"
-                      }`}
+                          ? "text-green-600 font-semibold"
+                          : "text-slate-800 font-medium"
+                      )}
                     >
                       {v}
                     </span>
                   </div>
                 ))}
               </div>
-              <button className="mt-3 text-[11px] text-blue-600 hover:underline font-medium flex items-center gap-1">
-                <Info className="w-3 h-3" />
-                View score-explanation
+
+              <button className="mt-5 pt-3 border-t border-slate-100 w-full text-xs text-blue-600 font-semibold flex items-center justify-center gap-1.5 hover:text-blue-800 transition">
+                <Info className="w-4 h-4" /> View score explanation
               </button>
-            </div>
+            </Card>
 
-            {/* RIGHT: Score Components + Weight + Evidence */}
-            <div className="col-span-12 lg:col-span-9 bg-white border border-slate-200 rounded-xl shadow-sm p-4 flex flex-col gap-4">
-
-              {/* Score Components Grid */}
-              <div>
-                <div className="flex items-center gap-1.5 mb-3">
-                  <span className="text-[13px] font-bold text-slate-800">
-                    Score Components
-                  </span>
-                  <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                  {SCORE_COMPONENTS.map((c) => (
-                    <div key={c.label} className="flex flex-col items-center text-center">
-                      <p className="text-[10px] text-slate-500 font-medium leading-tight mb-2 min-h-[28px] flex items-center justify-center">
-                        {c.label}
-                      </p>
-                      {c.score === null ? (
-                        <div className="flex items-baseline gap-0.5 mb-2">
-                          <span className="text-[22px] font-extrabold text-slate-400">
-                            N/A
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex items-baseline gap-0.5 mb-2">
-                          <span className={`text-[22px] font-extrabold ${c.color}`}>
-                            {c.score}
-                          </span>
-                          <span className="text-[11px] text-slate-400">/100</span>
-                        </div>
-                      )}
-                      {/* Progress bar */}
-                      <div className={`w-full h-1.5 ${c.trackColor} rounded-full overflow-hidden`}>
+            {/* Score Components */}
+            <Card className="col-span-8 p-5 bg-white border border-slate-200 rounded-xl shadow-sm">
+              <div className="flex items-center gap-2 mb-5">
+                <h3 className="text-sm font-bold text-slate-900">Score Components</h3>
+                <HelpCircle className="w-4 h-4 text-slate-400" />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                {SCORE_COMPONENTS.map((c, i) => (
+                  <div
+                    key={i}
+                    className="bg-white border border-slate-200 rounded-lg p-4 flex flex-col gap-3 shadow-sm"
+                  >
+                    <p className="text-xs text-slate-700 font-bold leading-snug">{c.label}</p>
+                    {c.score === null ? (
+                      <span className="text-3xl font-black text-slate-300">N/A</span>
+                    ) : (
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-black" style={{ color: c.scoreColor }}>
+                          {c.score}
+                        </span>
+                        <span className="text-xs font-semibold text-slate-400">/100</span>
+                      </div>
+                    )}
+                    <div className="w-full space-y-2 mt-auto">
+                      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full ${c.barColor} transition-all`}
-                          style={{ width: c.score === null ? "0%" : `${c.score}%` }}
+                          className="h-full rounded-full transition-all duration-1000 ease-out delay-150"
+                          style={{ width: c.score ? `${c.score}%` : "0%", backgroundColor: c.barColor }}
                         />
                       </div>
-                      <p className="text-[10px] text-slate-400 mt-1">
-                        {c.weightLabel}
-                      </p>
+                      <p className="text-xs text-slate-500 font-medium">Weight {c.weight}%</p>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-
-              {/* Divider */}
-              <div className="border-t border-slate-100" />
-
-              {/* Weight + Evidence side-by-side */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                {/* Weight Breakdown */}
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <span className="text-[12px] font-bold text-slate-800">
-                      Weight Breakdown
-                    </span>
-                    <HelpCircle className="w-3 h-3 text-slate-400" />
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 mb-2">
-                    <span className="font-semibold">Category: Electronics</span>
-                    <span className="font-semibold">Total 100%</span>
-                  </div>
-                  <div className="space-y-2.5">
-                    {WEIGHT_ROWS.map((row) => (
-                      <div key={row.label}>
-                        <div className="flex justify-between text-[11px] mb-1">
-                          <span className="text-slate-600">{row.label}</span>
-                          <span className="text-slate-500 font-semibold">
-                            {row.pct}%
-                          </span>
-                        </div>
-                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${row.barColor}`}
-                            style={{ width: `${row.pct * 2}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Input Evidence */}
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <span className="text-[12px] font-bold text-slate-800">
-                      Input Evidence
-                    </span>
-                    <HelpCircle className="w-3 h-3 text-slate-400" />
-                  </div>
-                  <div className="space-y-0.5">
-                    {/* Header */}
-                    <div className="grid grid-cols-[1fr_48px_64px_auto] gap-1 px-1 pb-1 border-b border-slate-100">
-                      {["Source", "Items", "Status", "Last Updated"].map((h) => (
-                        <span
-                          key={h}
-                          className="text-[9px] font-bold text-slate-400 uppercase tracking-wide"
-                        >
-                          {h}
-                        </span>
-                      ))}
-                    </div>
-                    {EVIDENCE_ROWS.map((e) => (
-                      <div
-                        key={e.source}
-                        className="grid grid-cols-[1fr_48px_64px_auto] gap-1 items-center px-1 py-1 rounded hover:bg-slate-50 cursor-pointer group"
-                      >
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          {e.icon}
-                          <span className="text-[11px] text-slate-700 font-medium truncate">
-                            {e.source}
-                          </span>
-                        </div>
-                        <span className="text-[11px] text-slate-500 text-right pr-2">
-                          {e.items}
-                        </span>
-                        <div>
-                          <StatusBadge status={e.status} />
-                        </div>
-                        <span className="text-[10px] text-slate-400 whitespace-nowrap text-right">
-                          {e.lastUpdated}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+            </Card>
           </div>
 
-          {/* ── Score History ── */}
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 mb-4">
-            <div className="flex items-center gap-1.5 mb-4">
-              <span className="text-[13px] font-bold text-slate-800">
-                Score History
-              </span>
-              <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
-            </div>
+          {/* Row 2: Weight Breakdown + Input Evidence */}
+          <div className="grid grid-cols-12 gap-6">
+            {/* Weight Breakdown */}
+            <Card className="col-span-4 p-5 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col">
+              <div className="flex items-center gap-2 mb-4">
+                <h3 className="text-sm font-bold text-slate-900">Weight Breakdown</h3>
+                <HelpCircle className="w-4 h-4 text-slate-400" />
+              </div>
+              <div className="flex items-center justify-between text-xs text-slate-600 bg-slate-50 border border-slate-100 rounded-md px-3 py-2 mb-4">
+                <span className="font-medium">Category: Electronics</span>
+                <span className="font-bold text-slate-900">Total 100%</span>
+              </div>
+              <div className="space-y-4 flex-1">
+                {WEIGHT_ROWS.map((row) => (
+                  <div key={row.label} className="space-y-1.5">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-600 font-medium">{row.label}</span>
+                      <span className="text-slate-900 font-bold">{row.pct}%</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-600 rounded-full transition-all duration-1000 ease-out delay-300" style={{ width: mounted ? `${row.pct}%` : "0%" }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
 
-            <div className="grid grid-cols-12 gap-5">
-              {/* Sparkline */}
-              <div className="col-span-12 md:col-span-4">
-                <ScoreSparkline />
-                <div className="flex justify-between text-[10px] text-slate-400 mt-1 px-2">
+            {/* Input Evidence */}
+            <Card className="col-span-8 p-0 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+              <div className="flex items-center gap-2 p-5 border-b border-slate-100">
+                <h3 className="text-sm font-bold text-slate-900">Input Evidence</h3>
+                <HelpCircle className="w-4 h-4 text-slate-400" />
+              </div>
+              <Table>
+                <TableHeader className="bg-slate-50/50">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-xs font-bold text-slate-500 uppercase">Source</TableHead>
+                    <TableHead className="text-xs font-bold text-slate-500 uppercase text-right">Items</TableHead>
+                    <TableHead className="text-xs font-bold text-slate-500 uppercase">Status</TableHead>
+                    <TableHead className="text-xs font-bold text-slate-500 uppercase">Last Updated</TableHead>
+                    <TableHead className="w-8"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {EVIDENCE_ROWS.map((e, i) => (
+                    <TableRow key={i} className="hover:bg-slate-50/80 cursor-pointer">
+                      <TableCell className="py-3">
+                        <div className="flex items-center gap-2.5">
+                          {e.icon}
+                          <span className="text-xs font-semibold text-slate-800">{e.source}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 text-right text-xs font-bold text-slate-700">{e.items}</TableCell>
+                      <TableCell className="py-3">
+                        <StatusBadge status={e.status} />
+                      </TableCell>
+                      <TableCell className="py-3 text-xs font-medium text-slate-500">{e.lastUpdated}</TableCell>
+                      <TableCell className="py-3 text-slate-400">
+                        <ChevronRight className="w-4 h-4" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          </div>
+
+          {/* Row 3: Score History */}
+          <Card className="p-0 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div className="flex items-center gap-2 p-5 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900">Score History</h3>
+              <HelpCircle className="w-4 h-4 text-slate-400" />
+            </div>
+            <div className="grid grid-cols-12">
+              {/* Chart */}
+              <div className="col-span-4 border-r border-slate-100 p-5 flex flex-col justify-center">
+                <div className="h-[120px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={SCORE_DATA} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                      <XAxis dataKey="date" hide />
+                      <YAxis domain={[0, 100]} hide />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px', fontWeight: 600 }}
+                      />
+                      <Line type="monotone" dataKey="score" stroke="#0066FF" strokeWidth={3} dot={{ r: 4, strokeWidth: 2, fill: "#fff" }} activeDot={{ r: 6 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex justify-between text-xs text-slate-400 font-medium mt-2 px-2">
                   <span>Apr 19</span>
                   <span>Apr 29</span>
                   <span>May 9</span>
                   <span>May 18</span>
                 </div>
               </div>
-
-              {/* History Table */}
-              <div className="col-span-12 md:col-span-8 overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-slate-100">
-                      {[
-                        "Version",
-                        "Score",
-                        "Change",
-                        "Reason",
-                        "Model",
-                        "Updated By",
-                        "Updated At",
-                      ].map((h) => (
-                        <th
-                          key={h}
-                          className="pb-2 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wide pr-3 whitespace-nowrap"
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
+              {/* Table */}
+              <div className="col-span-8 p-0">
+                <Table>
+                  <TableHeader className="bg-white">
+                    <TableRow className="hover:bg-transparent border-b border-slate-100">
+                      <TableHead className="text-xs font-bold text-slate-500 uppercase h-10">Version</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-500 uppercase h-10">Score</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-500 uppercase h-10">Change</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-500 uppercase h-10">Reason</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-500 uppercase h-10">Model</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-500 uppercase h-10">Updated By</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-500 uppercase h-10">Updated At</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {HISTORY_ROWS.map((row, i) => (
-                      <tr
-                        key={i}
-                        className="border-b border-slate-50 hover:bg-slate-50 transition-colors"
-                      >
-                        <td className="py-2 pr-3">
-                          <span className="inline-block font-mono text-blue-700 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded text-[10px] whitespace-nowrap font-semibold">
-                            {row.version}
-                          </span>
-                        </td>
-                        <td className="py-2 pr-3 text-[13px] font-bold text-slate-800">
-                          {row.score}
-                        </td>
-                        <td className="py-2 pr-3">
+                      <TableRow key={i} className="hover:bg-slate-50/80">
+                        <TableCell className="py-3">
+                          <span className="font-mono text-xs font-bold text-slate-700">{row.version}</span>
+                        </TableCell>
+                        <TableCell className="py-3 text-sm font-black text-slate-900">{row.score}</TableCell>
+                        <TableCell className="py-3">
                           {row.changeDelta !== null ? (
                             <span
-                              className={`text-[12px] font-bold flex items-center gap-0.5 ${
-                                row.changeDelta < 0
-                                  ? "text-red-500"
-                                  : "text-emerald-600"
-                              }`}
-                            >
-                              {row.changeDelta < 0 && (
-                                <TrendingDown className="w-3 h-3" />
+                              className={cn(
+                                "inline-flex items-center gap-1 text-xs font-bold",
+                                row.changeDelta < 0 ? "text-red-600" : "text-green-600"
                               )}
-                              {row.change}
+                            >
+                              <span className="text-[10px]">{row.changeDelta < 0 ? "▼" : "▲"}</span>
+                              {Math.abs(row.changeDelta)}
                             </span>
                           ) : (
-                            <span className="text-slate-400 text-[12px]">—</span>
+                            <span className="text-slate-400 font-bold">—</span>
                           )}
-                        </td>
-                        <td className="py-2 pr-3 text-[11px] text-slate-600 max-w-[180px]">
+                        </TableCell>
+                        <TableCell className="py-3 text-xs text-slate-600 font-medium max-w-[150px] truncate" title={row.reason}>
                           {row.reason}
-                        </td>
-                        <td className="py-2 pr-3 text-[11px] font-mono text-slate-500">
-                          {row.model}
-                        </td>
-                        <td className="py-2 pr-3 text-[11px] text-slate-600 whitespace-nowrap">
-                          {row.updatedBy}
-                        </td>
-                        <td className="py-2 text-[11px] text-slate-400 whitespace-nowrap">
-                          {row.updatedAt}
-                        </td>
-                      </tr>
+                        </TableCell>
+                        <TableCell className="py-3 text-xs font-mono font-semibold text-slate-500">{row.model}</TableCell>
+                        <TableCell className="py-3 text-xs font-bold text-slate-700">{row.updatedBy}</TableCell>
+                        <TableCell className="py-3 text-xs font-medium text-slate-500 whitespace-nowrap">{row.updatedAt}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
-                <div className="mt-3 flex justify-center">
-                  <button className="text-[12px] text-blue-600 hover:underline font-semibold flex items-center gap-1">
-                    View full score history
-                    <ChevronRight className="w-3.5 h-3.5" />
+                  </TableBody>
+                </Table>
+                <div className="p-3 border-t border-slate-100 flex justify-center bg-slate-50/50">
+                  <button className="text-xs text-blue-600 font-bold flex items-center gap-1 hover:underline">
+                    View full score history <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             </div>
-          </div>
-          {/* bottom padding */}
-          <div className="h-4" />
+          </Card>
         </div>
-      </div>
 
-      {/* ════════════════════════════════════════════
-          RIGHT PANEL
-      ════════════════════════════════════════════ */}
-      <div className="w-[280px] xl:w-[296px] shrink-0 border-l border-slate-200 bg-white overflow-y-auto">
-        <div className="p-4 space-y-5">
-
-          {/* ── Card 1: Current Verdict Summary ── */}
-          <div>
-            <h3 className="text-[11px] font-bold text-slate-700 uppercase tracking-widest mb-3">
-              Current Verdict Summary
-            </h3>
-
+        {/* RIGHT COLUMN (SIDEBAR) */}
+        <div className="col-span-4 flex flex-col gap-6 sticky top-6 self-start">
+          {/* Current Verdict Summary */}
+          <Card className="p-5 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col gap-4">
+            <h3 className="text-sm font-bold text-slate-900">Current Verdict Summary</h3>
             {/* Wait banner */}
-            <div className="flex items-center gap-2 mb-3 p-2 bg-amber-50 border border-amber-100 rounded-lg">
-              <span className="inline-block px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 text-[11px] font-bold">
-                Wait
-              </span>
-              <span className="text-[11px] text-slate-500 leading-tight">
+            <div className="flex items-center gap-3 p-3 bg-orange-50 border border-orange-100 rounded-lg">
+              <StatusBadge status="Wait" />
+              <span className="text-xs text-orange-900 font-semibold">
                 Not enough confidence for Buy/Don&apos;t Buy.
               </span>
             </div>
-
             {/* Why Wait */}
-            <div className="mb-3">
-              <p className="text-[11px] font-bold text-slate-700 mb-1.5">
-                Why Wait?
-              </p>
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-slate-800">Why Wait?</p>
               <ul className="space-y-1.5">
-                {[
-                  "Price is above 90-day average",
-                  "Mixed expert opinions",
-                  "Slight decline in Review Trust Score",
-                ].map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-start gap-1.5 text-[11px] text-slate-600"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1 shrink-0" />
-                    {item}
-                  </li>
-                ))}
+                {["Price is above 90-day average", "Mixed expert opinions", "Slight decline in Review Trust Score"].map(
+                  (item) => (
+                    <li key={item} className="flex items-start gap-2 text-xs text-slate-600 font-medium">
+                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
+                      {item}
+                    </li>
+                  )
+                )}
               </ul>
             </div>
-
             {/* What needs to improve */}
-            <div className="mb-2">
-              <p className="text-[11px] font-bold text-slate-700 mb-1.5">
-                What needs to improve?
-              </p>
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-slate-800">What needs to improve?</p>
               <ul className="space-y-1.5">
-                {[
-                  "Lower price or better promotions",
-                  "More positive expert reviews",
-                  "Increase high-trust review volume",
-                ].map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-start gap-1.5 text-[11px] text-slate-600"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1 shrink-0" />
-                    {item}
-                  </li>
-                ))}
+                {["Lower price or better promotions", "More positive expert reviews", "Increase high-trust review volume"].map(
+                  (item) => (
+                    <li key={item} className="flex items-start gap-2 text-xs text-slate-600 font-medium">
+                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+                      {item}
+                    </li>
+                  )
+                )}
               </ul>
             </div>
-
-            <button className="mt-1 text-[11px] text-blue-600 hover:underline font-semibold flex items-center gap-0.5">
-              View full explanation
-              <ChevronRight className="w-3 h-3" />
+            <button className="text-xs text-blue-600 flex items-center gap-1 hover:underline font-bold mt-2">
+              View full explanation <ArrowRight className="w-3 h-3" />
             </button>
-          </div>
+          </Card>
 
-          <hr className="border-slate-100" />
-
-          {/* ── Card 2: Manual Override ── */}
-          <div>
-            <div className="flex items-center gap-1.5 mb-3">
-              <h3 className="text-[11px] font-bold text-slate-700 uppercase tracking-widest">
-                Manual Override
-              </h3>
-              <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+          {/* Manual Override */}
+          <Card className="p-5 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-slate-900">Manual Override</h3>
+                <HelpCircle className="w-4 h-4 text-slate-400" />
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-slate-500 font-bold">Override score?</span>
+                <button
+                  type="button"
+                  onClick={() => setOverrideOn(!overrideOn)}
+                  className={cn(
+                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                    overrideOn ? "bg-blue-600" : "bg-slate-200"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                      overrideOn ? "translate-x-4" : "translate-x-0"
+                    )}
+                  />
+                </button>
+              </div>
             </div>
-
-            {/* Toggle row */}
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[12px] text-slate-600 font-medium">
-                Override score?
-              </span>
-              <button
-                onClick={() => setOverrideEnabled(!overrideEnabled)}
-                className={`relative w-10 h-5 rounded-full transition-colors duration-200 focus:outline-none ${
-                  overrideEnabled ? "bg-blue-600" : "bg-slate-200"
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-200 ${
-                    overrideEnabled ? "left-5" : "left-0.5"
-                  }`}
+            
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-slate-600 font-bold mb-1.5">New score (0–100)</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={newScore}
+                  disabled={!overrideOn}
+                  onChange={(e) => setNewScore(e.target.value)}
+                  placeholder="Enter new score"
+                  className="w-full h-9 px-3 text-sm border border-slate-200 rounded-lg bg-white disabled:bg-slate-50 disabled:text-slate-400 placeholder:text-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition font-medium"
                 />
-              </button>
-            </div>
-
-            {/* New Score */}
-            <div className="mb-2">
-              <label className="block text-[11px] text-slate-500 font-medium mb-1">
-                New score (0–100)
-              </label>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={newScore}
-                onChange={(e) => setNewScore(e.target.value)}
-                placeholder="Enter new score..."
-                className="w-full h-8 px-2.5 text-[12px] border border-slate-200 rounded-lg bg-white text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-              />
-            </div>
-
-            {/* Reason */}
-            <div className="mb-3">
-              <label className="block text-[11px] text-slate-500 font-medium mb-1">
-                Reason
-              </label>
-              <textarea
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder="Explain why you're overriding this score..."
-                rows={3}
-                maxLength={500}
-                className="w-full px-2.5 py-2 text-[12px] border border-slate-200 rounded-lg bg-white text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none transition-all"
-              />
-              <div className="text-right text-[10px] text-slate-400 mt-0.5">
-                {reason.length} / 500
+              </div>
+              <div>
+                <label className="block text-xs text-slate-600 font-bold mb-1.5">Reason</label>
+                <textarea
+                  rows={3}
+                  value={reason}
+                  disabled={!overrideOn}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Explain why you're overriding this score..."
+                  maxLength={500}
+                  className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg bg-white disabled:bg-slate-50 disabled:text-slate-400 placeholder:text-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none transition font-medium"
+                />
+                <div className="text-right text-xs text-slate-400 mt-1 font-medium">{reason.length} / 500</div>
               </div>
             </div>
 
-            {/* CTA Buttons */}
-            <div className="flex gap-2">
-              <button className="flex-1 h-8 text-[12px] font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1 shadow-sm">
-                <Check className="w-3.5 h-3.5" />
-                Save Override
-              </button>
-              <button className="flex-1 h-8 text-[12px] font-bold bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors flex items-center justify-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5" />
-                Remove Override
-              </button>
+            <div className="flex gap-3 mt-1">
+              <Button
+                disabled={!overrideOn}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-sm"
+              >
+                <Save className="w-4 h-4 mr-2" /> Save Override
+              </Button>
+              <Button
+                variant="outline"
+                disabled={!overrideOn}
+                className="flex-1 text-red-600 border-red-200 bg-red-50 hover:bg-red-100 hover:text-red-700 font-bold shadow-sm disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400"
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> Remove Override
+              </Button>
             </div>
-            <p className="text-[10px] text-slate-400 mt-1.5 text-center leading-snug">
+            <p className="text-xs text-slate-400 text-center font-medium mt-1">
               Overrides are logged and visible in score history.
             </p>
-          </div>
+          </Card>
 
-          <hr className="border-slate-100" />
-
-          {/* ── Card 3: Admin Notes ── */}
-          <div className="pb-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-1.5">
-                <h3 className="text-[11px] font-bold text-slate-700 uppercase tracking-widest">
-                  Admin Notes
-                </h3>
-                <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+          {/* Admin Notes */}
+          <Card className="p-5 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-slate-900">Admin Notes</h3>
+                <HelpCircle className="w-4 h-4 text-slate-400" />
               </div>
-              <button className="flex items-center gap-1 text-[11px] text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md font-semibold transition-colors">
-                <Plus className="w-3 h-3" />
-                Add Note
-              </button>
+              <Button variant="outline" size="sm" className="h-7 text-xs font-bold text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100">
+                <Plus className="w-3.5 h-3.5 mr-1" /> Add Note
+              </Button>
             </div>
-
-            {/* Existing Note */}
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-3">
-              <div className="flex items-start gap-2">
-                <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold shrink-0 shadow-sm">
-                  AU
-                </div>
+            
+            {/* existing note */}
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <img
+                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80"
+                  alt="Admin"
+                  className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0 mt-0.5"
+                />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                    <span className="text-[11px] font-bold text-slate-800">
-                      Admin User
-                    </span>
-                    <span className="text-[9px] bg-emerald-100 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-bold">
-                      Super Admin
-                    </span>
-                    <span className="text-[10px] text-slate-400 ml-auto whitespace-nowrap">
-                      May 18, 2024, 9:23 AM
-                    </span>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-slate-900">Admin User</span>
+                      <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200 text-[9px] px-1.5 py-0 uppercase font-bold">
+                        Super Admin
+                      </Badge>
+                    </div>
+                    <span className="text-xs text-slate-400 font-medium">May 18, 9:25 AM</span>
                   </div>
-                  <p className="text-[11px] text-slate-600 leading-relaxed">
-                    Price spike likely temporary due to limited stock. Re-check
-                    after next price drop.
+                  <p className="text-xs text-slate-700 leading-relaxed font-medium mt-1.5">
+                    Price spike likely temporary due to limited stock. Re-check after next price drop.
                   </p>
                 </div>
               </div>
             </div>
-
-            {/* New Note Input */}
-            <textarea
-              value={adminNote}
-              onChange={(e) => setAdminNote(e.target.value)}
-              placeholder="Add a note..."
-              rows={2}
-              className="w-full px-2.5 py-2 text-[12px] border border-slate-200 rounded-lg bg-white text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none transition-all"
-            />
-          </div>
+          </Card>
         </div>
       </div>
     </div>
+  );
+}
+
+function Clock(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  );
+}
+
+function FileText(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <polyline points="10 9 9 9 8 9" />
+    </svg>
+  );
+}
+
+function CheckCircle2(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
   );
 }
